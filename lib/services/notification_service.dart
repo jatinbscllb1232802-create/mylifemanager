@@ -20,9 +20,11 @@ Future<void> notificationTapBackground(NotificationResponse response) async {
 
 class NotificationService {
   NotificationService._();
+
   static final NotificationService instance = NotificationService._();
 
-  static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
+  static const AndroidNotificationChannel _channel =
+      AndroidNotificationChannel(
     'task_reminders_v1',
     'Task reminders',
     description: 'Periodic reminders with pending tasks',
@@ -37,32 +39,44 @@ class NotificationService {
 
   Future<void> init() async {
     const androidInit =
-        AndroidInitializationSettings('@drawable/ic_launcher_legacy');
-    const initSettings = InitializationSettings(android: androidInit);
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    const initSettings = InitializationSettings(
+      android: androidInit,
+    );
 
     await _plugin.initialize(
       initSettings,
       onDidReceiveNotificationResponse: _onForegroundResponse,
-      onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
+      onDidReceiveBackgroundNotificationResponse:
+          notificationTapBackground,
     );
 
     await _ensureAndroidChannel();
   }
 
-  /// Alarm callbacks run in a separate isolate; the plugin must be initialized there too.
+  /// Alarm callbacks run in a separate isolate; the plugin must be
+  /// initialized there too.
   Future<void> ensureInitializedForBackgroundIsolate() async {
     const androidInit =
-        AndroidInitializationSettings('@drawable/ic_launcher_legacy');
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
     await _plugin.initialize(
-      const InitializationSettings(android: androidInit),
-      onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
+      const InitializationSettings(
+        android: androidInit,
+      ),
+      onDidReceiveBackgroundNotificationResponse:
+          notificationTapBackground,
     );
+
     await _ensureAndroidChannel();
   }
 
   Future<void> _ensureAndroidChannel() async {
-    final android = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final android =
+        _plugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+
     await android?.createNotificationChannel(_channel);
   }
 
@@ -71,12 +85,19 @@ class NotificationService {
   }
 
   void _onForegroundResponse(NotificationResponse response) {
-    handleNotificationResponse(response, fromForeground: true);
+    handleNotificationResponse(
+      response,
+      fromForeground: true,
+    );
   }
 
   static Future<void> handleBackgroundResponse(
-      NotificationResponse response) async {
-    await handleNotificationResponse(response, fromForeground: false);
+    NotificationResponse response,
+  ) async {
+    await handleNotificationResponse(
+      response,
+      fromForeground: false,
+    );
   }
 
   static Future<void> handleNotificationResponse(
@@ -85,16 +106,23 @@ class NotificationService {
   }) async {
     if (Firebase.apps.isEmpty) {
       await Firebase.initializeApp(
-          options: DefaultFirebaseOptions.currentPlatform);
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
     }
 
     final prefs = await SharedPreferences.getInstance();
     final uid = prefs.getString(StorageKeys.currentUid);
+
     if (uid == null) return;
 
     final actionId = response.actionId;
-    if (actionId != null && actionId.startsWith(_taskActionPrefix)) {
-      final taskId = actionId.substring(_taskActionPrefix.length);
+
+    if (actionId != null &&
+        actionId.startsWith(_taskActionPrefix)) {
+      final taskId = actionId.substring(
+        _taskActionPrefix.length,
+      );
+
       await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
@@ -105,10 +133,12 @@ class NotificationService {
         'completedAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
+
       return;
     }
 
-    final bodyTap = response.actionId == null &&
+    final bodyTap =
+        response.actionId == null &&
         (response.payload == ReminderPayloads.openReminder ||
             response.notificationResponseType ==
                 NotificationResponseType.selectedNotification);
@@ -127,21 +157,33 @@ class NotificationService {
         importance: Importance.defaultImportance,
         priority: Priority.defaultPriority,
       );
+
       await _plugin.show(
         _notificationId,
         'MyLifeManager',
         'No pending tasks.',
-        NotificationDetails(android: android),
+        NotificationDetails(
+          android: android,
+        ),
       );
+
       return;
     }
 
-    final lines = pending.map((t) => '• ${t.title}').join('\n');
+    final lines = pending
+        .map((t) => '• ${t.title}')
+        .join('\n');
 
     final actions = <AndroidNotificationAction>[];
+
     for (var i = 0; i < pending.length && i < 3; i++) {
       final t = pending[i];
-      final label = _shorten('Done: ${t.title}', 28);
+
+      final label = _shorten(
+        'Done: ${t.title}',
+        28,
+      );
+
       actions.add(
         AndroidNotificationAction(
           '$_taskActionPrefix${t.id}',
@@ -167,13 +209,21 @@ class NotificationService {
       _notificationId,
       '${pending.length} pending task(s)',
       'Tap to review all tasks',
-      NotificationDetails(android: android),
+      NotificationDetails(
+        android: android,
+      ),
       payload: ReminderPayloads.openReminder,
     );
   }
 
-  static String _shorten(String text, int maxChars) {
-    if (text.length <= maxChars) return text;
+  static String _shorten(
+    String text,
+    int maxChars,
+  ) {
+    if (text.length <= maxChars) {
+      return text;
+    }
+
     return '${text.substring(0, maxChars - 1)}…';
   }
 }
