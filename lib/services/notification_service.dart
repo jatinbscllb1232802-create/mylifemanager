@@ -3,12 +3,12 @@ import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants/reminder_payloads.dart';
 import '../constants/storage_keys.dart';
 import '../firebase_options.dart';
 import '../models/task.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 final FlutterLocalNotificationsPlugin _plugin =
     FlutterLocalNotificationsPlugin();
@@ -36,7 +36,8 @@ class NotificationService {
   void Function()? onOpenReminder;
 
   Future<void> init() async {
-    const androidInit = AndroidInitializationSettings('@drawable/ic_launcher_legacy');
+    const androidInit =
+        AndroidInitializationSettings('@drawable/ic_launcher_legacy');
     const initSettings = InitializationSettings(android: androidInit);
 
     await _plugin.initialize(
@@ -50,7 +51,8 @@ class NotificationService {
 
   /// Alarm callbacks run in a separate isolate; the plugin must be initialized there too.
   Future<void> ensureInitializedForBackgroundIsolate() async {
-    const androidInit = AndroidInitializationSettings('@drawable/ic_launcher_legacy');
+    const androidInit =
+        AndroidInitializationSettings('@drawable/ic_launcher_legacy');
     await _plugin.initialize(
       const InitializationSettings(android: androidInit),
       onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
@@ -72,7 +74,8 @@ class NotificationService {
     handleNotificationResponse(response, fromForeground: true);
   }
 
-  static Future<void> handleBackgroundResponse(NotificationResponse response) async {
+  static Future<void> handleBackgroundResponse(
+      NotificationResponse response) async {
     await handleNotificationResponse(response, fromForeground: false);
   }
 
@@ -81,7 +84,8 @@ class NotificationService {
     required bool fromForeground,
   }) async {
     if (Firebase.apps.isEmpty) {
-      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+      await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform);
     }
 
     final prefs = await SharedPreferences.getInstance();
@@ -116,7 +120,7 @@ class NotificationService {
 
   Future<void> showReminder(List<Task> pending) async {
     if (pending.isEmpty) {
-      const android = AndroidNotificationDetails(
+      final android = AndroidNotificationDetails(
         _channel.id,
         _channel.name,
         channelDescription: _channel.description,
@@ -127,7 +131,7 @@ class NotificationService {
         _notificationId,
         'MyLifeManager',
         'No pending tasks.',
-        const NotificationDetails(android: android),
+        NotificationDetails(android: android),
       );
       return;
     }

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../navigation/post_auth.dart';
-import '../providers/auth_provider.dart';
+import '../providers/auth_provider.dart' as local;
 import '../services/auth_service.dart';
 
 class PhoneOtpScreen extends StatefulWidget {
@@ -43,7 +43,7 @@ class _PhoneOtpScreenState extends State<PhoneOtpScreen> {
           try {
             await FirebaseAuth.instance.signInWithCredential(credential);
             if (!mounted) return;
-            await context.read<AuthProvider>().refreshAfterExternalSignIn();
+            await context.read<local.AuthProvider>().refreshAfterExternalSignIn();
             await navigateAfterAuthenticated(context);
           } catch (e) {
             if (!mounted) return;
@@ -90,7 +90,7 @@ class _PhoneOtpScreenState extends State<PhoneOtpScreen> {
     });
 
     try {
-      await context.read<AuthProvider>().signInWithPhoneCode(
+      await context.read<local.AuthProvider>().signInWithPhoneCode(
             verificationId: id,
             smsCode: _codeController.text.trim(),
           );
