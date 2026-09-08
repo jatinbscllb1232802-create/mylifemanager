@@ -6,7 +6,11 @@ class AuthService {
     FirebaseAuth? firebaseAuth,
     GoogleSignIn? googleSignIn,
   })  : _auth = firebaseAuth ?? FirebaseAuth.instance,
-        _googleSignIn = googleSignIn ?? GoogleSignIn();
+        _googleSignIn = googleSignIn ??
+            GoogleSignIn(
+              serverClientId:
+                  '891664406669-a96bbobeq2o862o2qhrr3dc9o7g53l0e.apps.googleusercontent.com',
+            );
 
   final FirebaseAuth _auth;
   final GoogleSignIn _googleSignIn;
@@ -17,14 +21,18 @@ class AuthService {
 
   Future<UserCredential> signInWithGoogle() async {
     final googleUser = await _googleSignIn.signIn();
+
     if (googleUser == null) {
       throw StateError('Google sign-in was cancelled.');
     }
+
     final googleAuth = await googleUser.authentication;
+
     final credential = GoogleAuthProvider.credential(
       accessToken: googleAuth.accessToken,
       idToken: googleAuth.idToken,
     );
+
     return _auth.signInWithCredential(credential);
   }
 
@@ -35,13 +43,23 @@ class AuthService {
     ]);
   }
 
-  /// Starts phone verification; [codeSent] receives [verificationId].
+  /// Kept for compatibility with the existing phone-auth screen/code.
+  /// Phone sign-in is no longer exposed in the login UI.
   Future<void> verifyPhoneNumber({
     required String phoneNumber,
-    required void Function(String verificationId, int? resendToken) codeSent,
-    required void Function(FirebaseAuthException e) verificationFailed,
-    required void Function(PhoneAuthCredential credential) verificationCompleted,
-    required void Function(String verificationId) codeAutoRetrievalTimeout,
+    required void Function(
+      String verificationId,
+      int? resendToken,
+    ) codeSent,
+    required void Function(
+      FirebaseAuthException e,
+    ) verificationFailed,
+    required void Function(
+      PhoneAuthCredential credential,
+    ) verificationCompleted,
+    required void Function(
+      String verificationId,
+    ) codeAutoRetrievalTimeout,
   }) {
     return _auth.verifyPhoneNumber(
       phoneNumber: phoneNumber,
@@ -61,6 +79,7 @@ class AuthService {
       verificationId: verificationId,
       smsCode: smsCode,
     );
+
     return _auth.signInWithCredential(credential);
   }
 }
