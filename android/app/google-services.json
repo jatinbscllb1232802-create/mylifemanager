@@ -1,26 +1,44 @@
 {
   "project_info": {
-    "project_number": "526721954515",
-    "project_id": "my-life-manager-yu6d0l",
-    "storage_bucket": "my-life-manager-yu6d0l.firebasestorage.app"
+    "project_number": "891664406669",
+    "project_id": "mylifemanager-25220",
+    "storage_bucket": "mylifemanager-25220.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:526721954515:android:184a69140e6d9e59a55a26",
+        "mobilesdk_app_id": "1:891664406669:android:1e0e321a8e53576382eac4",
         "android_client_info": {
           "package_name": "com.mylifemanager.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "891664406669-bq1apo2ngknj5s4ckp3ft7edg1gd2817.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mylifemanager.app",
+            "certificate_hash": "c0b5f9104aa531ae1007481f8498e953bf72297e"
+          }
+        },
+        {
+          "client_id": "891664406669-a96bbobeq2o862o2qhrr3dc9o7g53l0e.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyAfBwZsZWMRNaQvAqkszOkPdhPZFIooT8U"
+          "current_key": "AIzaSyCIiOhCk9vGEHI-ga0MRTZ2mNY_8-cxFdQ"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "891664406669-a96bbobeq2o862o2qhrr3dc9o7g53l0e.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
