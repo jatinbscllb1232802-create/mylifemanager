@@ -104,10 +104,17 @@ class _StartupAppState extends State<StartupApp> {
       await _runStep(
         'Firebase initialization',
         () async {
-          if (Firebase.apps.isEmpty) {
+          try {
             await Firebase.initializeApp(
               options: DefaultFirebaseOptions.currentPlatform,
             );
+          } catch (e) {
+            // Ignore if the default app already exists (common on Android)
+            if (e.toString().contains('duplicate-app')) {
+              await _log('Firebase already initialized (duplicate-app ignored)');
+            } else {
+              rethrow;
+            }
           }
         },
       );
