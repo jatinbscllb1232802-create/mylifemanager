@@ -1,19 +1,9 @@
-﻿// Replace this file by running: dart pub global activate flutterfire_cli && flutterfire configure
-// Or paste values from the Firebase console (Project settings > Your apps > Android).
+﻿// File generated for Firebase project: mylifemanager-25220
 
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
-/// Default [FirebaseOptions] for use with your Firebase apps.
-///
-/// Example:
-/// ```dart
-/// import 'firebase_options.dart';
-/// // ...
-/// await Firebase.initializeApp(
-///   options: DefaultFirebaseOptions.currentPlatform,
-/// );
-/// ```
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
@@ -29,12 +19,11 @@ class DefaultFirebaseOptions {
     }
   }
 
-  /// TODO: Replace with values from your Firebase project (`google-services.json`).
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAfBwZsZWMRNaQvAqkszOkPdhPZFIooT8U',
-    appId: '1:526721954515:android:184a69140e6d9e59a55a26',
-    messagingSenderId: '526721954515',
-    projectId: 'my-life-manager-yu6d0l',
-    storageBucket: 'my-life-manager-yu6d0l.firebasestorage.app',
+    apiKey: 'AIzaSyCIiOhCk9vGEHI-ga0MRTZ2mNY_8-cxFdQ',
+    appId: '1:891664406669:android:1e0e321a8e53576382eac4',
+    messagingSenderId: '891664406669',
+    projectId: 'mylifemanager-25220',
+    storageBucket: 'mylifemanager-25220.firebasestorage.app',
   );
 }
