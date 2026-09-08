@@ -104,9 +104,11 @@ class _StartupAppState extends State<StartupApp> {
       await _runStep(
         'Firebase initialization',
         () async {
-          await Firebase.initializeApp(
-            options: DefaultFirebaseOptions.currentPlatform,
-          );
+          if (Firebase.apps.isEmpty) {
+            await Firebase.initializeApp(
+              options: DefaultFirebaseOptions.currentPlatform,
+            );
+          }
         },
       );
 

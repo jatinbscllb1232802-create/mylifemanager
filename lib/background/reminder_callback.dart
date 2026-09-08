@@ -2,12 +2,12 @@ import 'dart:ui';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants/storage_keys.dart';
 import '../firebase_options.dart';
 import '../services/notification_service.dart';
 import '../services/task_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 /// Called by [AndroidAlarmManager] on each interval (may be delayed by Doze).
 ///
@@ -19,7 +19,9 @@ Future<void> reminderAlarmCallback(int id) async {
   WidgetsFlutterBinding.ensureInitialized();
 
   if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
   }
 
   final prefs = await SharedPreferences.getInstance();
