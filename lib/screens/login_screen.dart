@@ -3,8 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../navigation/post_auth.dart';
 import '../providers/auth_provider.dart';
-import 'phone_entry_dialog.dart';
-import 'phone_otp_screen.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -47,25 +45,6 @@ class LoginScreen extends StatelessWidget {
               },
               icon: const Icon(Icons.login),
               label: const Text('Continue with Google'),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () async {
-                final phone = await showDialog<String>(
-                  context: context,
-                  builder: (ctx) => const PhoneEntryDialog(),
-                );
-
-                if (phone == null || phone.isEmpty || !context.mounted) return;
-
-                await Navigator.of(context).push<void>(
-                  MaterialPageRoute(
-                    builder: (_) => PhoneOtpScreen(phoneNumber: phone),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.sms),
-              label: const Text('Continue with phone (OTP)'),
             ),
           ],
         ),
