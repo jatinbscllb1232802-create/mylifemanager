@@ -1,4 +1,4 @@
-﻿// File generated for Firebase project: mylifemanager-25220
+// File generated for Firebase project: mylifemanager-25220
 
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'

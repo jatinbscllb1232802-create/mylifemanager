@@ -61,19 +61,54 @@ class TaskTile extends StatelessWidget {
                 task.completed ? TextDecoration.lineThrough : TextDecoration.none,
           ),
         ),
-        subtitle: task.deadline == null
-            ? null
-            : Text('Due ${df.format(task.deadline!)}'),
-        secondary: IconButton(
-          tooltip: 'Edit',
-          icon: const Icon(Icons.edit_outlined),
-          onPressed: () async {
-            await Navigator.of(context).push<void>(
-              MaterialPageRoute(
-                builder: (_) => AddEditTaskScreen(task: task),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (task.category != null)
+              Text(
+                task.category!,
+                style: Theme.of(context).textTheme.labelSmall,
               ),
-            );
+            if (task.deadline != null)
+              Text(
+                'Due ${df.format(task.deadline!)}'
+                '${task.isOverdue ? ' · Overdue' : ''}'
+                '${task.isSnoozed ? ' · Snoozed' : ''}',
+              ),
+          ],
+        ),
+        isThreeLine: task.deadline != null && task.category != null,
+        secondary: PopupMenuButton<String>(
+          onSelected: (value) async {
+            switch (value) {
+              case 'edit':
+                await Navigator.of(context).push<void>(
+                  MaterialPageRoute(
+                    builder: (_) => AddEditTaskScreen(task: task),
+                  ),
+                );
+              case 'snooze':
+                await tasks.snoozeUntilTomorrow(task.id);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Snoozed until tomorrow 9:00 AM'),
+                    ),
+                  );
+                }
+              case 'delete':
+                await tasks.deleteTask(task.id);
+            }
           },
+          itemBuilder: (ctx) => [
+            const PopupMenuItem(value: 'edit', child: Text('Edit')),
+            if (!task.completed)
+              const PopupMenuItem(
+                value: 'snooze',
+                child: Text('Done for today (snooze)'),
+              ),
+            const PopupMenuItem(value: 'delete', child: Text('Delete')),
+          ],
         ),
       ),
     );

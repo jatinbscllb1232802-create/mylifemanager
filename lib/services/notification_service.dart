@@ -33,9 +33,13 @@ class NotificationService {
 
   static const int _notificationId = 71234;
   static const String _taskActionPrefix = 'task_done_';
+  static const String _quickAddAction = 'quick_add_task';
 
   /// Called when user taps the reminder notification body (foreground).
   void Function()? onOpenReminder;
+
+  /// Called when user taps Quick Add on the notification.
+  void Function()? onQuickAdd;
 
   Future<void> init() async {
     const androidInit =
@@ -55,8 +59,6 @@ class NotificationService {
     await _ensureAndroidChannel();
   }
 
-  /// Alarm callbacks run in a separate isolate; the plugin must be
-  /// initialized there too.
   Future<void> ensureInitializedForBackgroundIsolate() async {
     const androidInit =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -113,15 +115,21 @@ class NotificationService {
     final prefs = await SharedPreferences.getInstance();
     final uid = prefs.getString(StorageKeys.currentUid);
 
-    if (uid == null) return;
-
     final actionId = response.actionId;
 
-    if (actionId != null &&
-        actionId.startsWith(_taskActionPrefix)) {
-      final taskId = actionId.substring(
-        _taskActionPrefix.length,
-      );
+    // Quick add
+    if (actionId == _quickAddAction ||
+        response.payload == ReminderPayloads.quickAdd) {
+      if (fromForeground) {
+        NotificationService.instance.onQuickAdd?.call();
+      }
+      return;
+    }
+
+    if (uid == null) return;
+
+    if (actionId != null && actionId.startsWith(_taskActionPrefix)) {
+      final taskId = actionId.substring(_taskActionPrefix.length);
 
       await FirebaseFirestore.instance
           .collection('users')
@@ -132,13 +140,12 @@ class NotificationService {
         'completed': true,
         'completedAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
+        'snoozedUntil': FieldValue.delete(),
       });
-
       return;
     }
 
-    final bodyTap =
-        response.actionId == null &&
+    final bodyTap = response.actionId == null &&
         (response.payload == ReminderPayloads.openReminder ||
             response.notificationResponseType ==
                 NotificationResponseType.selectedNotification);
@@ -148,42 +155,56 @@ class NotificationService {
     }
   }
 
-  Future<void> showReminder(List<Task> pending) async {
+  Future<void> showReminder(
+    List<Task> pending, {
+    int completedToday = 0,
+  }) async {
     if (pending.isEmpty) {
+      final summary = completedToday > 0
+          ? 'No pending tasks. You completed $completedToday today.'
+          : 'No pending tasks.';
+
       final android = AndroidNotificationDetails(
         _channel.id,
         _channel.name,
         channelDescription: _channel.description,
         importance: Importance.defaultImportance,
         priority: Priority.defaultPriority,
+        actions: const [
+          AndroidNotificationAction(
+            _quickAddAction,
+            'Add task',
+            showsUserInterface: true,
+          ),
+        ],
       );
 
       await _plugin.show(
         _notificationId,
         'MyLifeManager',
-        'No pending tasks.',
-        NotificationDetails(
-          android: android,
-        ),
+        summary,
+        NotificationDetails(android: android),
+        payload: ReminderPayloads.openReminder,
       );
-
       return;
     }
 
-    final lines = pending
-        .map((t) => '• ${t.title}')
-        .join('\n');
+    final lines = pending.map((t) {
+      final cat = t.category != null ? ' [${t.category}]' : '';
+      return '• ${t.title}$cat';
+    }).join('\n');
 
-    final actions = <AndroidNotificationAction>[];
+    final actions = <AndroidNotificationAction>[
+      const AndroidNotificationAction(
+        _quickAddAction,
+        'Add task',
+        showsUserInterface: true,
+      ),
+    ];
 
-    for (var i = 0; i < pending.length && i < 3; i++) {
+    for (var i = 0; i < pending.length && i < 2; i++) {
       final t = pending[i];
-
-      final label = _shorten(
-        'Done: ${t.title}',
-        28,
-      );
-
+      final label = _shorten('Done: ${t.title}', 28);
       actions.add(
         AndroidNotificationAction(
           '$_taskActionPrefix${t.id}',
@@ -193,6 +214,10 @@ class NotificationService {
         ),
       );
     }
+
+    final title = completedToday > 0
+        ? '${pending.length} pending · $completedToday done today'
+        : '${pending.length} pending task(s)';
 
     final android = AndroidNotificationDetails(
       _channel.id,
@@ -207,23 +232,15 @@ class NotificationService {
 
     await _plugin.show(
       _notificationId,
-      '${pending.length} pending task(s)',
-      'Tap to review all tasks',
-      NotificationDetails(
-        android: android,
-      ),
+      title,
+      'Tap to review · Add task from actions',
+      NotificationDetails(android: android),
       payload: ReminderPayloads.openReminder,
     );
   }
 
-  static String _shorten(
-    String text,
-    int maxChars,
-  ) {
-    if (text.length <= maxChars) {
-      return text;
-    }
-
+  static String _shorten(String text, int maxChars) {
+    if (text.length <= maxChars) return text;
     return '${text.substring(0, maxChars - 1)}…';
   }
 }

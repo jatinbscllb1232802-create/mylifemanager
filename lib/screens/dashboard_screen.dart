@@ -7,11 +7,14 @@ import '../app_launcher.dart';
 import '../navigator_key.dart';
 import '../providers/auth_provider.dart';
 import '../providers/settings_provider.dart';
+import '../providers/tasks_provider.dart';
 import '../services/notification_service.dart';
 import '../widgets/reminder_dialog.dart';
+import 'add_edit_task_screen.dart';
 import 'login_screen.dart';
 import 'settings_screen.dart';
 import 'tasks_screen.dart';
+import 'weekly_review_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -27,10 +30,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     NotificationService.instance.onOpenReminder = _openReminderDialog;
+    NotificationService.instance.onQuickAdd = _openQuickAdd;
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       await context.read<SettingsProvider>().requestAndroidReminderPermissions();
+      if (!mounted) return;
+      await context.read<TasksProvider>().syncOffline();
       if (!mounted) return;
       if (AppLauncher.openReminderOnColdStart) {
         AppLauncher.openReminderOnColdStart = false;
@@ -44,6 +50,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (NotificationService.instance.onOpenReminder == _openReminderDialog) {
       NotificationService.instance.onOpenReminder = null;
     }
+    if (NotificationService.instance.onQuickAdd == _openQuickAdd) {
+      NotificationService.instance.onQuickAdd = null;
+    }
     super.dispose();
   }
 
@@ -52,6 +61,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (ctx != null) {
       unawaited(ReminderDialog.show(ctx));
     }
+  }
+
+  void _openQuickAdd() {
+    final ctx = rootNavigatorKey.currentContext;
+    if (ctx == null) return;
+    Navigator.of(ctx).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const AddEditTaskScreen(),
+      ),
+    );
   }
 
   Future<void> _logout() async {
@@ -82,6 +101,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
               ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.insights_outlined),
+              title: const Text('Weekly review'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const WeeklyReviewScreen(),
+                  ),
+                );
+              },
             ),
             ListTile(
               leading: const Icon(Icons.settings_outlined),
@@ -124,6 +155,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Navigator.of(context).push(
                   MaterialPageRoute<void>(
                     builder: (_) => const TasksScreen(),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.insights_outlined),
+              title: const Text('Weekly review'),
+              subtitle: const Text('Progress & focus'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const WeeklyReviewScreen(),
                   ),
                 );
               },
