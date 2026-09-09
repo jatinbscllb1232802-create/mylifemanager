@@ -22,6 +22,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsProvider>().settings;
+    final currentMinutes = settings.reminderIntervalMinutes;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -45,7 +46,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               for (final m in const [15, 20, 30])
                 ChoiceChip(
                   label: Text('$m min'),
-                  selected: settings.reminderIntervalMinutes == m,
+                  selected: currentMinutes == m,
                   onSelected: (_) async {
                     await context
                         .read<SettingsProvider>()
@@ -73,13 +74,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 );
                 return;
               }
-              await context.read<SettingsProvider>().setReminderIntervalMinutes(raw);
+              await context
+                  .read<SettingsProvider>()
+                  .setReminderIntervalMinutes(raw);
               if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Reminder interval set to $raw minutes')),
+                SnackBar(
+                  content: Text('Reminder interval set to $raw minutes'),
+                ),
               );
             },
             child: const Text('Apply custom interval'),
+          ),
+          const SizedBox(height: 16),
+          // Shows the currently active interval
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              'Currently set to every $currentMinutes minute${currentMinutes == 1 ? '' : 's'}',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
           ),
           const Divider(height: 32),
           Text(
