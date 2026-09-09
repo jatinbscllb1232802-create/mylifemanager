@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "891664406669-djhma8pppila6irg2v1pekcdtigif1n5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mylifemanager.app",
+            "certificate_hash": "d249f0145e5ef2432f7d684b3e55e0ce1082ac4e"
+          }
+        },
+        {
           "client_id": "891664406669-npc54rimvfo6616733i0g7orhpfs3ov1.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
