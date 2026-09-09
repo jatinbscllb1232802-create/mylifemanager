@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/settings_provider.dart';
+import '../services/reminder_scheduler.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -87,7 +88,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: const Text('Apply custom interval'),
           ),
           const SizedBox(height: 16),
-          // Shows the currently active interval
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -101,6 +101,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     fontWeight: FontWeight.w500,
                   ),
             ),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () async {
+              await context
+                  .read<SettingsProvider>()
+                  .requestAndroidReminderPermissions();
+              await ReminderScheduler.scheduleTestInOneMinute();
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Test reminder scheduled in ~1 minute. Keep the app in background.',
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.notifications_active_outlined),
+            label: const Text('Test reminder in 1 minute'),
           ),
           const Divider(height: 32),
           Text(
