@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -85,7 +84,7 @@ class SettingsProvider extends ChangeNotifier {
     await ReminderScheduler.scheduleEveryMinutes(safe);
   }
 
-  /// Requests the only runtime permission needed by the reminder notification.
+  /// Requests the only runtime permission needed by reminder notifications.
   /// WorkManager does not require exact-alarm or battery-optimization permissions.
   Future<void> requestAndroidReminderPermissions() async {
     await Permission.notification.request();
