@@ -122,10 +122,7 @@ class _StartupAppState extends State<StartupApp> {
       await _runStep(
         'WorkManager initialization',
         () async {
-          await Workmanager().initialize(
-            workmanagerCallbackDispatcher,
-            isInDebugMode: false,
-          );
+          await Workmanager().initialize(workmanagerCallbackDispatcher);
         },
       );
 
