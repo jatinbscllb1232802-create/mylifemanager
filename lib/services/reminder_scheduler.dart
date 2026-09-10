@@ -2,7 +2,6 @@ import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 
 import '../background/reminder_callback.dart';
 
-/// Registers the periodic alarm used for reminders.
 class ReminderScheduler {
   ReminderScheduler._();
 
@@ -17,7 +16,7 @@ class ReminderScheduler {
     await cancel();
     if (minutes <= 0) return;
 
-    final ok = await AndroidAlarmManager.periodic(
+    await AndroidAlarmManager.periodic(
       Duration(minutes: minutes),
       alarmId,
       reminderAlarmCallback,
@@ -26,22 +25,18 @@ class ReminderScheduler {
       rescheduleOnReboot: true,
       allowWhileIdle: true,
     );
-    // ignore: avoid_print
-    print('ReminderScheduler: periodic($minutes min) scheduled=$ok');
   }
 
-  /// Fires one reminder ~1 minute from now (for testing).
-  static Future<void> scheduleTestInOneMinute() async {
+  static Future<bool> scheduleTestInOneMinute() async {
     await AndroidAlarmManager.cancel(testAlarmId);
-    final ok = await AndroidAlarmManager.oneShot(
+    return AndroidAlarmManager.oneShot(
       const Duration(minutes: 1),
       testAlarmId,
       reminderAlarmCallback,
       exact: true,
       wakeup: true,
       allowWhileIdle: true,
+      alarmClock: true,
     );
-    // ignore: avoid_print
-    print('ReminderScheduler: test oneShot scheduled=$ok');
   }
 }

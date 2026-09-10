@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/settings_provider.dart';
+import '../services/notification_service.dart';
 import '../services/reminder_scheduler.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -18,6 +19,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void dispose() {
     _customController.dispose();
     super.dispose();
+  }
+
+  Future<void> _showImmediateTest() async {
+    await context.read<SettingsProvider>().requestAndroidReminderPermissions();
+    await NotificationService.instance.showReminder(
+      [],
+      completedToday: 3,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Immediate notification requested. Check the shade.'),
+      ),
+    );
+  }
+
+  Future<void> _scheduleOneMinuteAlarm() async {
+    await context.read<SettingsProvider>().requestAndroidReminderPermissions();
+    final ok = await ReminderScheduler.scheduleTestInOneMinute();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? 'Alarm scheduled in ~1 min. Put app in background.'
+              : 'Failed to schedule alarm. Allow Alarms & reminders permission.',
+        ),
+      ),
+    );
   }
 
   @override
@@ -102,24 +132,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
+          Text(
+            'Diagnostics',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          FilledButton.tonalIcon(
+            onPressed: _showImmediateTest,
+            icon: const Icon(Icons.notifications),
+            label: const Text('Show test notification NOW'),
+          ),
+          const SizedBox(height: 8),
           OutlinedButton.icon(
-            onPressed: () async {
-              await context
-                  .read<SettingsProvider>()
-                  .requestAndroidReminderPermissions();
-              await ReminderScheduler.scheduleTestInOneMinute();
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Test reminder scheduled in ~1 minute. Keep the app in background.',
-                  ),
-                ),
-              );
-            },
-            icon: const Icon(Icons.notifications_active_outlined),
-            label: const Text('Test reminder in 1 minute'),
+            onPressed: _scheduleOneMinuteAlarm,
+            icon: const Icon(Icons.alarm),
+            label: const Text('Test alarm in 1 minute'),
           ),
           const Divider(height: 32),
           Text(
