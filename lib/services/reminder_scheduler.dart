@@ -13,7 +13,6 @@ class ReminderScheduler {
     await Workmanager().cancelByUniqueName(_oneOffUnique);
   }
 
-  /// Android periodic minimum is 15 minutes.
   static Future<void> scheduleEveryMinutes(int minutes) async {
     await Workmanager().cancelByUniqueName(_periodicUnique);
     if (minutes <= 0) return;
@@ -25,13 +24,9 @@ class ReminderScheduler {
       kReminderTask,
       frequency: frequency,
       existingWorkPolicy: ExistingPeriodicWorkPolicy.replace,
-      constraints: Constraints(
-        networkType: NetworkType.connected,
-      ),
     );
   }
 
-  /// One-off test (~1 minute). Does not require 15-min minimum.
   static Future<bool> scheduleTestInOneMinute() async {
     try {
       await Workmanager().cancelByUniqueName(_oneOffUnique);
@@ -40,9 +35,6 @@ class ReminderScheduler {
         kReminderOneOff,
         initialDelay: const Duration(minutes: 1),
         existingWorkPolicy: ExistingWorkPolicy.replace,
-        constraints: Constraints(
-          networkType: NetworkType.connected,
-        ),
       );
       return true;
     } catch (_) {
