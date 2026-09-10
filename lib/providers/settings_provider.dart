@@ -44,6 +44,7 @@ class SettingsProvider extends ChangeNotifier {
     _settingsSub?.cancel();
     final uid = _authProvider.user?.uid;
     if (uid == null) {
+      unawaited(ReminderScheduler.cancel());
       return;
     }
     _settingsSub = _settingsService.watchSettings(uid).listen((remote) async {
@@ -54,7 +55,9 @@ class SettingsProvider extends ChangeNotifier {
         StorageKeys.themeMode,
         UserSettings.themeModeToStorage(remote.themeMode),
       );
-      await ReminderScheduler.scheduleEveryMinutes(remote.reminderIntervalMinutes);
+      await ReminderScheduler.scheduleEveryMinutes(
+        remote.reminderIntervalMinutes,
+      );
     });
   }
 
@@ -63,7 +66,10 @@ class SettingsProvider extends ChangeNotifier {
     if (uid == null) return;
     await _settingsService.updateThemeMode(uid, mode);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(StorageKeys.themeMode, UserSettings.themeModeToStorage(mode));
+    await prefs.setString(
+      StorageKeys.themeMode,
+      UserSettings.themeModeToStorage(mode),
+    );
     _settings = _settings.copyWith(themeMode: mode);
     notifyListeners();
   }
@@ -71,16 +77,18 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> setReminderIntervalMinutes(int minutes) async {
     final uid = _authProvider.user?.uid;
     if (uid == null) return;
-    final safe = minutes.clamp(1, 24 * 60);
+    final safe = minutes.clamp(
+      ReminderScheduler.minimumIntervalMinutes,
+      24 * 60,
+    );
     await _settingsService.updateReminderInterval(uid, safe);
     await ReminderScheduler.scheduleEveryMinutes(safe);
   }
 
-  /// Best-effort: improves reliability of periodic reminders on stock Android.
+  /// Requests the only runtime permission needed by the reminder notification.
+  /// WorkManager does not require exact-alarm or battery-optimization permissions.
   Future<void> requestAndroidReminderPermissions() async {
     await Permission.notification.request();
-    await Permission.scheduleExactAlarm.request();
-    await Permission.ignoreBatteryOptimizations.request();
   }
 
   @override
