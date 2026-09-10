@@ -43,8 +43,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       SnackBar(
         content: Text(
           ok
-              ? 'Alarm scheduled in ~1 min. Put app in background.'
-              : 'Failed to schedule alarm. Allow Alarms & reminders permission.',
+              ? 'One-off WorkManager test scheduled in ~1 min. Put app in background.'
+              : 'Failed to schedule the WorkManager test.',
         ),
       ),
     );
@@ -66,7 +66,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'A notification will show your pending tasks on this schedule (Android may delay alarms slightly).',
+            'WorkManager supports periodic reminders from 15 minutes upward. Android may delay execution slightly.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 12),
@@ -92,6 +92,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             keyboardType: TextInputType.number,
             decoration: const InputDecoration(
               labelText: 'Custom interval (minutes)',
+              helperText: 'Minimum 15 minutes',
               border: OutlineInputBorder(),
             ),
           ),
@@ -99,9 +100,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           FilledButton(
             onPressed: () async {
               final raw = int.tryParse(_customController.text.trim());
-              if (raw == null || raw <= 0) {
+              if (raw == null || raw < ReminderScheduler.minimumIntervalMinutes) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Enter a positive number.')),
+                  const SnackBar(
+                    content: Text('Enter an interval of at least 15 minutes.'),
+                  ),
                 );
                 return;
               }
@@ -147,7 +150,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           OutlinedButton.icon(
             onPressed: _scheduleOneMinuteAlarm,
             icon: const Icon(Icons.alarm),
-            label: const Text('Test alarm in 1 minute'),
+            label: const Text('Test reminder in 1 minute'),
           ),
           const Divider(height: 32),
           Text(
