@@ -61,8 +61,9 @@ class SettingsService {
   }
 
   Future<void> updateReminderInterval(String uid, int minutes) async {
+    final safe = minutes.clamp(15, 24 * 60);
     await _userDoc(uid).update({
-      'reminderIntervalMinutes': minutes,
+      'reminderIntervalMinutes': safe,
     });
   }
 
