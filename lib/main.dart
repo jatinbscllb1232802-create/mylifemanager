@@ -1,4 +1,5 @@
-import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -55,7 +56,7 @@ class _StartupAppState extends State<StartupApp> {
     });
   }
 
-  Future<T> _runStep<T>(
+  Future<T> _runStep(
     String name,
     Future<T> Function() action,
   ) async {
@@ -85,7 +86,8 @@ class _StartupAppState extends State<StartupApp> {
 
   Future<void> _initialize() async {
     try {
-      await _diagnostics.clear();
+      // Keep the persisted diagnostic history so a failed startup can be
+      // diagnosed after a restart. StartupDiagnostics already caps it at 200.
       await _log('APPLICATION STARTED');
 
       await _runStep(
@@ -122,15 +124,8 @@ class _StartupAppState extends State<StartupApp> {
         () async {
           await Workmanager().initialize(
             workmanagerCallbackDispatcher,
-            isInDebugMode: true,
+            isInDebugMode: false,
           );
-        },
-      );
-
-      await _runStep(
-        'AndroidAlarmManager initialization',
-        () async {
-          await AndroidAlarmManager.initialize();
         },
       );
 
