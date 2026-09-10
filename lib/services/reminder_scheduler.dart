@@ -16,6 +16,7 @@ class ReminderScheduler {
     await cancel();
     if (minutes <= 0) return;
 
+    await AndroidAlarmManager.initialize();
     await AndroidAlarmManager.periodic(
       Duration(minutes: minutes),
       alarmId,
@@ -24,10 +25,12 @@ class ReminderScheduler {
       wakeup: true,
       rescheduleOnReboot: true,
       allowWhileIdle: true,
+      alarmClock: true,
     );
   }
 
   static Future<bool> scheduleTestInOneMinute() async {
+    await AndroidAlarmManager.initialize();
     await AndroidAlarmManager.cancel(testAlarmId);
     return AndroidAlarmManager.oneShot(
       const Duration(minutes: 1),
