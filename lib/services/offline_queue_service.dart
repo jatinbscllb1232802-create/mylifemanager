@@ -10,23 +10,31 @@ enum OfflineOpType { add, complete, snooze, delete }
 
 class OfflineOp {
   OfflineOp({
+    required this.ownerUid,
     required this.type,
     required this.payload,
   });
 
+  final String ownerUid;
   final OfflineOpType type;
   final Map<String, dynamic> payload;
 
   Map<String, dynamic> toJson() => {
+        'ownerUid': ownerUid,
         'type': type.name,
         'payload': payload,
       };
 
   factory OfflineOp.fromJson(Map<String, dynamic> json) {
+    final ownerUid = json['ownerUid'] as String?;
+    if (ownerUid == null || ownerUid.isEmpty) {
+      throw const FormatException('Offline operation has no owner UID');
+    }
     return OfflineOp(
+      ownerUid: ownerUid,
       type: OfflineOpType.values.firstWhere(
         (e) => e.name == json['type'],
-        orElse: () => OfflineOpType.add,
+        orElse: () => throw FormatException('Unknown offline operation type'),
       ),
       payload: Map<String, dynamic>.from(json['payload'] as Map),
     );
@@ -48,10 +56,21 @@ class OfflineQueueService {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(StorageKeys.offlineQueue);
     if (raw == null || raw.isEmpty) return [];
-    final list = jsonDecode(raw) as List<dynamic>;
-    return list
-        .map((e) => OfflineOp.fromJson(Map<String, dynamic>.from(e as Map)))
-        .toList();
+
+    try {
+      final list = jsonDecode(raw) as List<dynamic>;
+      return list
+          .map((e) => OfflineOp.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+    } on FormatException {
+      // Legacy/invalid queue entries cannot be safely attributed to a user.
+      // Discard the entire queue rather than risk cross-account writes.
+      await _save([]);
+      return [];
+    } on TypeError {
+      await _save([]);
+      return [];
+    }
   }
 
   Future<void> _save(List<OfflineOp> ops) async {
@@ -77,6 +96,12 @@ class OfflineQueueService {
 
     final remaining = <OfflineOp>[];
     for (final op in ops) {
+      // Never apply an operation created by another signed-in account.
+      if (op.ownerUid != uid) {
+        remaining.add(op);
+        continue;
+      }
+
       try {
         switch (op.type) {
           case OfflineOpType.add:
