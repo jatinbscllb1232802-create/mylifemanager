@@ -1,45 +1,52 @@
-import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
+import 'package:workmanager/workmanager.dart';
 
-import '../background/reminder_callback.dart';
+import '../background/workmanager_callback.dart';
 
 class ReminderScheduler {
   ReminderScheduler._();
 
-  static const int alarmId = 90001;
-  static const int testAlarmId = 90002;
+  static const String _periodicUnique = 'mlm_periodic_reminder';
+  static const String _oneOffUnique = 'mlm_oneoff_reminder';
 
   static Future<void> cancel() async {
-    await AndroidAlarmManager.cancel(alarmId);
+    await Workmanager().cancelByUniqueName(_periodicUnique);
+    await Workmanager().cancelByUniqueName(_oneOffUnique);
   }
 
+  /// Android periodic minimum is 15 minutes.
   static Future<void> scheduleEveryMinutes(int minutes) async {
-    await cancel();
+    await Workmanager().cancelByUniqueName(_periodicUnique);
     if (minutes <= 0) return;
 
-    await AndroidAlarmManager.initialize();
-    await AndroidAlarmManager.periodic(
-      Duration(minutes: minutes),
-      alarmId,
-      reminderAlarmCallback,
-      exact: true,
-      wakeup: true,
-      rescheduleOnReboot: true,
-      allowWhileIdle: true,
-      alarmClock: true,
+    final frequency = Duration(minutes: minutes < 15 ? 15 : minutes);
+
+    await Workmanager().registerPeriodicTask(
+      _periodicUnique,
+      kReminderTask,
+      frequency: frequency,
+      existingWorkPolicy: ExistingPeriodicWorkPolicy.replace,
+      constraints: Constraints(
+        networkType: NetworkType.connected,
+      ),
     );
   }
 
+  /// One-off test (~1 minute). Does not require 15-min minimum.
   static Future<bool> scheduleTestInOneMinute() async {
-    await AndroidAlarmManager.initialize();
-    await AndroidAlarmManager.cancel(testAlarmId);
-    return AndroidAlarmManager.oneShot(
-      const Duration(minutes: 1),
-      testAlarmId,
-      reminderAlarmCallback,
-      exact: true,
-      wakeup: true,
-      allowWhileIdle: true,
-      alarmClock: true,
-    );
+    try {
+      await Workmanager().cancelByUniqueName(_oneOffUnique);
+      await Workmanager().registerOneOffTask(
+        _oneOffUnique,
+        kReminderOneOff,
+        initialDelay: const Duration(minutes: 1),
+        existingWorkPolicy: ExistingWorkPolicy.replace,
+        constraints: Constraints(
+          networkType: NetworkType.connected,
+        ),
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 }

@@ -2,9 +2,11 @@ import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:workmanager/workmanager.dart';
 
 import 'app.dart';
 import 'app_launcher.dart';
+import 'background/workmanager_callback.dart';
 import 'constants/reminder_payloads.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
@@ -19,7 +21,6 @@ import 'services/update_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   runApp(const StartupApp());
 }
 
@@ -46,13 +47,9 @@ class _StartupAppState extends State<StartupApp> {
 
   Future<void> _log(String message) async {
     await _diagnostics.log(message);
-
     if (!mounted) return;
-
     final logs = await _diagnostics.getLogs();
-
     if (!mounted) return;
-
     setState(() {
       _logs = logs;
     });
@@ -74,14 +71,10 @@ class _StartupAppState extends State<StartupApp> {
       final result = await action().timeout(
         const Duration(seconds: 20),
         onTimeout: () {
-          throw TimeoutException(
-            '$name timed out after 20 seconds.',
-          );
+          throw TimeoutException('$name timed out after 20 seconds.');
         },
       );
-
       await _log('$name COMPLETED');
-
       return result;
     } catch (e, stackTrace) {
       await _log('ERROR in $name: $e');
@@ -93,7 +86,6 @@ class _StartupAppState extends State<StartupApp> {
   Future<void> _initialize() async {
     try {
       await _diagnostics.clear();
-
       await _log('APPLICATION STARTED');
 
       await _runStep(
@@ -109,7 +101,6 @@ class _StartupAppState extends State<StartupApp> {
               options: DefaultFirebaseOptions.currentPlatform,
             );
           } catch (e) {
-            // Ignore if the default app already exists (common on Android)
             if (e.toString().contains('duplicate-app')) {
               await _log('Firebase already initialized (duplicate-app ignored)');
             } else {
@@ -127,6 +118,16 @@ class _StartupAppState extends State<StartupApp> {
       );
 
       await _runStep(
+        'WorkManager initialization',
+        () async {
+          await Workmanager().initialize(
+            workmanagerCallbackDispatcher,
+            isInDebugMode: true,
+          );
+        },
+      );
+
+      await _runStep(
         'AndroidAlarmManager initialization',
         () async {
           await AndroidAlarmManager.initialize();
@@ -140,12 +141,11 @@ class _StartupAppState extends State<StartupApp> {
         },
       );
 
-      final payload =
-          launchDetails?.notificationResponse?.payload;
+      final payload = launchDetails?.notificationResponse?.payload;
 
       AppLauncher.openReminderOnColdStart =
           launchDetails?.didNotificationLaunchApp == true &&
-          payload == ReminderPayloads.openReminder;
+              payload == ReminderPayloads.openReminder;
 
       await _log('REMINDER LAUNCH CHECK COMPLETED');
 
@@ -164,7 +164,6 @@ class _StartupAppState extends State<StartupApp> {
       if (!mounted) return;
 
       final logs = await _diagnostics.getLogs();
-
       setState(() {
         _error = '$e';
         _logs = logs;
@@ -202,10 +201,7 @@ class _StartupAppState extends State<StartupApp> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Text(
-                        _error!,
-                        textAlign: TextAlign.center,
-                      ),
+                      Text(_error!, textAlign: TextAlign.center),
                       const SizedBox(height: 24),
                       const Align(
                         alignment: Alignment.centerLeft,
@@ -223,9 +219,7 @@ class _StartupAppState extends State<StartupApp> {
                         padding: const EdgeInsets.all(12),
                         color: Colors.black12,
                         child: Text(
-                          _logs.isEmpty
-                              ? 'No logs recorded.'
-                              : _logs.join('\n'),
+                          _logs.isEmpty ? 'No logs recorded.' : _logs.join('\n'),
                           style: const TextStyle(
                             fontSize: 11,
                             fontFamily: 'monospace',
@@ -310,7 +304,6 @@ class _StartupAppState extends State<StartupApp> {
 
 class TimeoutException implements Exception {
   final String message;
-
   TimeoutException(this.message);
 
   @override
