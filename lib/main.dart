@@ -56,7 +56,7 @@ class _StartupAppState extends State<StartupApp> {
     });
   }
 
-  Future<T> _runStep(
+  Future<T> _runStep<T>(
     String name,
     Future<T> Function() action,
   ) async {
@@ -122,7 +122,10 @@ class _StartupAppState extends State<StartupApp> {
       await _runStep(
         'WorkManager initialization',
         () async {
-          await Workmanager().initialize(workmanagerCallbackDispatcher);
+          await Workmanager().initialize(
+            workmanagerCallbackDispatcher,
+            isInDebugMode: false,
+          );
         },
       );
 
