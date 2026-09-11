@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,28 +16,25 @@ const String kReminderOneOff = 'reminder_oneoff';
 @pragma('vm:entry-point')
 void workmanagerCallbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
+    DartPluginRegistrant.ensureInitialized();
     WidgetsFlutterBinding.ensureInitialized();
 
     try {
       if (Firebase.apps.isEmpty) {
-        try {
-          await Firebase.initializeApp(
-            options: DefaultFirebaseOptions.currentPlatform,
-          );
-        } catch (e) {
-          if (!e.toString().contains('duplicate-app')) {
-            // continue; we still try to notify
-          }
-        }
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
       }
 
-      await NotificationService.instance.ensureInitializedForBackgroundIsolate();
+      await NotificationService.instance
+          .ensureInitializedForBackgroundIsolate();
 
       final prefs = await SharedPreferences.getInstance();
       final uid = prefs.getString(StorageKeys.currentUid);
 
-      if (uid == null) {
-        await NotificationService.instance.showReminder([]);
+      // A signed-out device has no work to perform. The foreground auth
+      // provider cancels the scheduled work when the user signs out.
+      if (uid == null || uid.isEmpty) {
         return true;
       }
 
@@ -47,13 +46,12 @@ void workmanagerCallbackDispatcher() {
         pending,
         completedToday: completedToday,
       );
-    } catch (_) {
-      try {
-        await NotificationService.instance.ensureInitializedForBackgroundIsolate();
-        await NotificationService.instance.showReminder([]);
-      } catch (_) {}
-    }
 
-    return true;
+      return true;
+    } catch (_) {
+      // Returning false tells WorkManager the task failed and allows its
+      // retry policy to handle a transient Firebase/notification failure.
+      return false;
+    }
   });
 }

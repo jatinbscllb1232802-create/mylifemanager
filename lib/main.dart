@@ -1,4 +1,5 @@
-import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -85,15 +86,14 @@ class _StartupAppState extends State<StartupApp> {
 
   Future<void> _initialize() async {
     try {
-      await _diagnostics.clear();
       await _log('APPLICATION STARTED');
 
-      await _runStep(
+      await _runStep<void>(
         'Flutter binding initialization',
         () async {},
       );
 
-      await _runStep(
+      await _runStep<void>(
         'Firebase initialization',
         () async {
           try {
@@ -110,31 +110,21 @@ class _StartupAppState extends State<StartupApp> {
         },
       );
 
-      await _runStep(
+      await _runStep<void>(
         'NotificationService initialization',
         () async {
           await NotificationService.instance.init();
         },
       );
 
-      await _runStep(
+      await _runStep<void>(
         'WorkManager initialization',
         () async {
-          await Workmanager().initialize(
-            workmanagerCallbackDispatcher,
-            isInDebugMode: true,
-          );
+          await Workmanager().initialize(workmanagerCallbackDispatcher);
         },
       );
 
-      await _runStep(
-        'AndroidAlarmManager initialization',
-        () async {
-          await AndroidAlarmManager.initialize();
-        },
-      );
-
-      final launchDetails = await _runStep(
+      final launchDetails = await _runStep<NotificationAppLaunchDetails?>(
         'Notification launch details',
         () async {
           return NotificationService.instance.getLaunchDetails();
@@ -186,19 +176,12 @@ class _StartupAppState extends State<StartupApp> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
-                        Icons.error_outline,
-                        size: 64,
-                        color: Colors.red,
-                      ),
+                      const Icon(Icons.error_outline, size: 64, color: Colors.red),
                       const SizedBox(height: 16),
                       const Text(
                         'MyLifeManager startup failed',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 16),
                       Text(_error!, textAlign: TextAlign.center),
@@ -207,10 +190,7 @@ class _StartupAppState extends State<StartupApp> {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           'Startup log:',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -220,10 +200,7 @@ class _StartupAppState extends State<StartupApp> {
                         color: Colors.black12,
                         child: Text(
                           _logs.isEmpty ? 'No logs recorded.' : _logs.join('\n'),
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontFamily: 'monospace',
-                          ),
+                          style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -258,10 +235,7 @@ class _StartupAppState extends State<StartupApp> {
                     Text(
                       _status,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
@@ -300,12 +274,4 @@ class _StartupAppState extends State<StartupApp> {
       child: const MyLifeManagerApp(),
     );
   }
-}
-
-class TimeoutException implements Exception {
-  final String message;
-  TimeoutException(this.message);
-
-  @override
-  String toString() => message;
 }

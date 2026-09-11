@@ -6,7 +6,6 @@ class UserSettings {
     required this.themeMode,
   });
 
-  /// Default settings for new sessions before Firestore loads.
   factory UserSettings.initial() => UserSettings(
         reminderIntervalMinutes: 30,
         themeMode: themeModeFromStorage(null),
@@ -52,7 +51,7 @@ class UserSettings {
     final interval = (data['reminderIntervalMinutes'] as num?)?.toInt() ?? 30;
     final themeRaw = data['themeMode'] as String?;
     return UserSettings(
-      reminderIntervalMinutes: interval.clamp(1, 24 * 60),
+      reminderIntervalMinutes: interval.clamp(15, 24 * 60),
       themeMode: themeModeFromStorage(themeRaw),
     );
   }

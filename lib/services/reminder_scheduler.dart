@@ -7,6 +7,7 @@ class ReminderScheduler {
 
   static const String _periodicUnique = 'mlm_periodic_reminder';
   static const String _oneOffUnique = 'mlm_oneoff_reminder';
+  static const int minimumIntervalMinutes = 15;
 
   static Future<void> cancel() async {
     await Workmanager().cancelByUniqueName(_periodicUnique);
@@ -15,14 +16,12 @@ class ReminderScheduler {
 
   static Future<void> scheduleEveryMinutes(int minutes) async {
     await Workmanager().cancelByUniqueName(_periodicUnique);
-    if (minutes <= 0) return;
-
-    final frequency = Duration(minutes: minutes < 15 ? 15 : minutes);
+    if (minutes < minimumIntervalMinutes) return;
 
     await Workmanager().registerPeriodicTask(
       _periodicUnique,
       kReminderTask,
-      frequency: frequency,
+      frequency: Duration(minutes: minutes),
       existingWorkPolicy: ExistingPeriodicWorkPolicy.replace,
     );
   }

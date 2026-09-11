@@ -110,6 +110,7 @@ class TasksProvider extends ChangeNotifier {
       );
     } else {
       await _offlineQueue.enqueue(OfflineOp(
+        ownerUid: uid,
         type: OfflineOpType.add,
         payload: {
           'title': title,
@@ -138,6 +139,7 @@ class TasksProvider extends ChangeNotifier {
       );
     } else {
       await _offlineQueue.enqueue(OfflineOp(
+        ownerUid: uid,
         type: OfflineOpType.complete,
         payload: {'taskId': taskId, 'completed': completed},
       ));
@@ -152,6 +154,7 @@ class TasksProvider extends ChangeNotifier {
       await _taskService.snoozeUntilTomorrow(uid: uid, taskId: taskId);
     } else {
       await _offlineQueue.enqueue(OfflineOp(
+        ownerUid: uid,
         type: OfflineOpType.snooze,
         payload: {'taskId': taskId},
       ));
@@ -166,6 +169,7 @@ class TasksProvider extends ChangeNotifier {
       await _taskService.deleteTask(uid: uid, taskId: taskId);
     } else {
       await _offlineQueue.enqueue(OfflineOp(
+        ownerUid: uid,
         type: OfflineOpType.delete,
         payload: {'taskId': taskId},
       ));

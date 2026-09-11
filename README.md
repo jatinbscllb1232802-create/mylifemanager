@@ -1,100 +1,57 @@
-﻿# MyLifeManager
+# MyLifeManager
 
-Android-only Flutter app: Firebase Auth (Google + phone OTP), Firestore tasks, periodic local reminders (rich notification actions), light/dark theme, and a Firestore-driven APK update prompt.
+Android-first Flutter task manager with Google Sign-In, Cloud Firestore task sync, local notifications, and WorkManager-based background reminders.
 
 ## Prerequisites
 
-1. Install [Flutter](https://docs.flutter.dev/get-started/install) (stable) and Android Studio (Android SDK).
-2. From this folder, let Flutter generate missing Android wrapper artifacts if needed:
-
-```bash
-cd mylifemanager
-flutter create .
-```
-
-This fills items like `android/gradle/wrapper/gradle-wrapper.jar` while keeping your `lib/` and `pubspec.yaml`.
-
-3. Install dependencies:
+1. Install Flutter (stable) and Android Studio with the Android SDK.
+2. From the project directory run:
 
 ```bash
 flutter pub get
 ```
 
-## Firebase setup (one-time)
+## Firebase setup
 
-Create a Firebase project and register an **Android app** with package name:
+The Android package name is:
 
 `com.mylifemanager.app`
 
-1. Download `google-services.json` and place it at `android/app/google-services.json`.
-2. Replace `lib/firebase_options.dart` using FlutterFire CLI (recommended):
+The repository includes the Android Firebase configuration and generated FlutterFire options used by the project.
 
-```bash
-dart pub global activate flutterfire_cli
-flutterfire configure
-```
+In Firebase Console:
 
-Pick your Firebase project and Android app. This overwrites `lib/firebase_options.dart` with real values.
-
-3. **Authentication**
-   - Enable **Google** sign-in provider.
-   - Enable **Phone** sign-in provider.
-   - For development, add **Phone auth test numbers** in Firebase Console to avoid SMS charges while testing.
-
-4. **Firestore**
-   - Create a Firestore database.
-   - Deploy rules from `firestore.rules` (Console → Firestore → Rules), or use Firebase CLI:
-
-```bash
-firebase deploy --only firestore:rules
-```
-
-5. **SHA-1 for Google / Phone auth**
-   - Add your debug keystore SHA-1 to Firebase Project settings (needed for Google Sign-In and some Phone flows):
-
-```bash
-cd android
-./gradlew signingReport
-```
-
-Copy the **SHA1** under `Variant: debug` and add it in Firebase Console → Project settings → Your apps → Android app.
+1. Enable Google sign-in under Authentication.
+2. Create/enable Cloud Firestore.
+3. Deploy `firestore.rules`.
 
 ## Firestore data layout
 
-- `users/{uid}` — profile + `reminderIntervalMinutes`, `themeMode`
-- `users/{uid}/tasks/{taskId}` — task fields (`title`, optional `deadline`, `completed`, timestamps)
-- `app_meta/version` — update metadata (public read; maintain via Console)
+- `users/{uid}` — profile plus `reminderIntervalMinutes` and `themeMode`
+- `users/{uid}/tasks/{taskId}` — task fields and timestamps
+- `app_meta/version` — optional update metadata
 
-### `app_meta/version` fields
-
-Create document ID **`version`** inside collection **`app_meta`**:
+### `app_meta/version`
 
 | Field | Type | Purpose |
-|-----|-----|--------|
-| `latestVersionCode` | int | Must be greater than `versionCode` in `pubspec.yaml` to prompt update |
-| `latestVersionName` | string | Display string, e.g. `1.0.1` |
-| `apkUrl` | string | HTTPS download URL for the release APK (see Storage below) |
-| `releaseNotes` | string | Shown in update dialog |
-| `forceUpdate` | bool | If `true`, user cannot dismiss the dialog |
+|---|---|---|
+| `latestVersionCode` | int | Release version code to compare with the installed app |
+| `latestVersionName` | string | Display version, e.g. `1.0.1` |
+| `apkUrl` | string | HTTPS download URL for the release APK |
+| `releaseNotes` | string | Shown in the update dialog |
+| `forceUpdate` | bool | Prevents dismissing a required update |
 
-### Hosting update APKs (free tier friendly)
+## Reminders
 
-1. Enable **Firebase Storage**.
-2. Upload `app-release.apk` (see build below) to a bucket path, e.g. `releases/mylifemanager-1.0.1.apk`.
-3. Create a **download token** link or use a **public** rule for that object if this is acceptable for your threat model (tiny private group). Paste that HTTPS URL into `apkUrl`.
+Reminders use **WorkManager** as the single background scheduling system. Android WorkManager has a 15-minute minimum periodic interval, so the app accepts reminder intervals from 15 minutes through 24 hours.
 
-> Keep APK links private if possible (signed URLs / locked-down rules). This template uses a plain URL for simplicity.
+The Settings diagnostics include an immediate notification test and a one-minute one-off WorkManager test. Android 13+ notification permission is requested when reminder diagnostics are used.
 
-## Run on a device / emulator
+WorkManager may defer execution because Android controls background scheduling and battery optimization. A periodic interval is therefore a scheduling hint, not an exact alarm.
 
-```bash
-flutter run
-```
+## Offline task changes
 
-On first launch after login, Android may prompt for:
-
-- Notifications (Android 13+)
-- Exact alarms / battery optimizations (best-effort for periodic reminders)
+Task additions, completion, snoozing, and deletion can be queued while offline. Every queued operation is bound to the Firebase UID that created it so operations cannot be replayed into another signed-in account.
 
 ## Release build
 
@@ -102,25 +59,18 @@ On first launch after login, Android may prompt for:
 flutter build apk --release
 ```
 
-Output: `build/app/outputs/flutter-apk/app-release.apk`
+Output:
 
-### Shipping an update
+`build/app/outputs/flutter-apk/app-release.apk`
 
-1. Bump `version:` in `pubspec.yaml`, e.g. `1.0.1+2` (`+` suffix is `versionCode`).
-2. `flutter build apk --release`
-3. Upload the new APK to Storage; copy the HTTPS download URL.
-4. Update Firestore `app_meta/version` with new `latestVersionCode`, `latestVersionName`, `apkUrl`, and `releaseNotes`.
+Bump the `version:` in `pubspec.yaml` before shipping a new release. The `+` suffix is the Android version code.
 
-Users see the dialog on next cold start / post-login navigation (`navigateAfterAuthenticated`).
+## Repository hygiene
 
-## Notes / limitations
-
-- **Android Doze** can delay alarms; intervals under ~15 minutes are especially unreliable without a foreground service (see TODO in `lib/background/reminder_callback.dart`).
-- **Offline mode** is not implemented (by design).
-- **iOS / Web** are out of scope for this repo.
+Generated Flutter/Dart tooling and IDE files are intentionally ignored and should not be committed. Run `flutter pub get` after cloning to regenerate local dependency metadata.
 
 ## Project layout
 
-- `lib/` — Flutter UI + services
-- `android/` — Android embedding, manifest permissions, Kotlin `MainActivity`
-- `firestore.rules` — security rules to paste/deploy
+- `lib/` — Flutter UI, providers, services, and background task handler
+- `android/` — Android application configuration
+- `firestore.rules` — Firestore security rules
